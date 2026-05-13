@@ -1,143 +1,185 @@
-# Claude Code Translator 翻译插件
+# Claude Code Translator
 
-**双向翻译**: 中文输入 → 英文发送给 Claude，英文输出 → 中文展示
+Claude Code 双向翻译插件：中文输入自动翻译为英文发送给模型，英文回复翻译为中文展示。
 
-## 功能
+## 架构
 
-- 🔄 **双向翻译**: 用户中文输入自动翻译成英文；Claude 英文响应在 `Stop` hook 中翻译成中文后展示
-- 🌍 **多 API 支持**: LibreTranslate (免费), DeepL, Google Translate, 百度翻译
-- ⚡ **零配置**: 默认使用 LibreTranslate 免费 API，安装即用
-- 🔒 **隐私保护**: 可选本地模型翻译 (Ollama)
+```
+用户输入中文 → UserPromptSubmit Hook → 翻译为英文 → Claude 接收英文
+Claude 回复英文 → Stop Hook → 翻译为中文 → 用户看到中文
+```
 
-## 快速开始
+## 安装
 
-### 安装
+### 1. 克隆仓库
 
 ```bash
-# 克隆仓库
-git clone https://github.com/your-username/claude-code-translator.git
+git clone https://github.com/Llkwvv/claude-code-translator.git
 cd claude-code-translator
-
-# 运行安装脚本
-./install.sh
 ```
 
-### 验证
-
-重启 Claude Code，输入中文测试：
-
-```
-输入：帮我写个 Python 脚本读取 CSV 文件
-Claude 接收：Write a Python script to read a CSV file
-用户看到：当然！这是一个读取 CSV 文件的 Python 脚本...
-
-> 输出侧翻译通过 Claude Code 的 `Stop` hook 实现，原始英文回复仍会先生成，再由插件翻译成中文作为附加展示。
-```
-
-## 配置
-
-### 切换翻译 API
+### 2. 安装依赖
 
 ```bash
-# 使用 DeepL (需要 API key)
-export TRANSLATE_API=deepl
-export DEEPL_API_KEY=your-api-key
-
-# 使用 Google Translate
-export TRANSLATE_API=google
-export GOOGLE_API_KEY=your-api-key
-
-# 使用百度翻译
-export TRANSLATE_API=baidu
-export BAIDU_APP_ID=your-app-id
-export BAIDU_SECRET_KEY=your-secret-key
-
-# 使用 LibreTranslate 自建服务
-export TRANSLATE_API=libre
-export LIBRE_ENDPOINT=http://localhost:5000/translate
-
-# 使用多 API 优先级配置 (推荐！)
-# 按顺序尝试多个 API，提高成功率
-export TRANSLATE_API=libre,google,deepl
+npm install
 ```
 
-### 配置文件
+### 3. 安装 Hook 脚本
 
-编辑 `~/.claude/settings.json`:
+```bash
+mkdir -p ~/.claude/hooks
+cp hooks/before-user-message.sh ~/.claude/hooks/
+cp hooks/after-model-response.sh ~/.claude/hooks/
+chmod +x ~/.claude/hooks/*.sh
+```
+
+### 4. 配置 cc-switch 通用配置
+
+打开 cc-switch，编辑 settings.json，在**通用配置片段**中添加以下内容：
 
 ```json
 {
-  "translator": {
-    "enabled": true,
-    "api": "libre",
-    "direction": "both",
-    "autoDetect": true,
-    "showOriginal": false
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/lkw/.claude/hooks/before-user-message.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/lkw/.claude/hooks/after-model-response.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CLAUDE_TRANSLATOR_PLUGIN_DIR": "/home/lkw/claude-code-translator",
+    "HTTP_PROXY": "http://127.0.0.1:7897",
+    "ALL_PROXY": "http://127.0.0.1:7897"
   }
 }
 ```
 
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| `enabled` | 是否启用翻译 | `true` |
-| `api` | 翻译 API (`libre`/`deepl`/`google`/`baidu`/`ollama`) | `libre` |
-| `direction` | 翻译方向 (`input`/`output`/`both`) | `both` |
-| `autoDetect` | 自动检测是否需要翻译 | `true` |
-| `showOriginal` | 显示原文 | `false` |
+> **注意**: 将路径替换为你本地的实际路径。`CLAUDE_TRANSLATOR_PLUGIN_DIR` 指向本仓库目录。
 
-## API 对比
+### 5. 为什么使用通用配置？
 
-| API | 免费额度 | 质量 | 需要 API Key |
-|-----|---------|------|-------------|
-| LibreTranslate | 完全免费 | ⭐⭐⭐ | ❌ |
-| DeepL | 50 万字符/月 | ⭐⭐⭐⭐⭐ | ✅ |
-| Google Translate | $20/月后付费 | ⭐⭐⭐⭐ | ✅ |
-| 百度翻译 | 100 万字符/月 | ⭐⭐⭐⭐ | ✅ |
-| Ollama 本地 | 免费 | ⭐⭐⭐ | ❌ |
+`cc-switch` 会在切换 API provider 时重写 `settings.json`。通用配置片段（Common Configuration Fragment）用于在 provider 之间共享非敏感配置（如 hooks、环境变量），切换时不会被覆盖。
 
-### 推荐配置
+> 如果插件或 hook 有更新，请重新提取通用配置以同步到所有 provider。
 
-**多 API 优先级配置 (最佳实践)**:
+### 6. 验证
+
+重启 Claude Code，输入中文测试：
+
+```
+输入：你好
+Claude 接收：Hello
+Claude 回复：Hello! How can I help you today?
+Stop Hook 翻译后显示：你好！有什么我可以帮你的吗？
+```
+
+## 配置
+
+### 环境变量
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `CLAUDE_TRANSLATOR_PLUGIN_DIR` | 插件仓库路径 | `/home/lkw/claude-code-translator` |
+| `HTTP_PROXY` | HTTP 代理地址 | - |
+| `ALL_PROXY` | 全局代理地址 | - |
+| `DEBUG` | 开启调试日志 | `translator` |
+| `TRANSLATE_API` | 翻译 API | `libre` |
+| `TRANSLATE_DIRECTION` | 翻译方向 | `both` |
+| `TRANSLATE_AUTO_DETECT` | 自动检测语言 | `true` |
+| `HOOK_LOG_FILE` | Hook 日志文件路径 | `~/.claude/translator-hook.log` |
+
+### 翻译 API 切换
+
 ```bash
-# 默认使用 LibreTranslate，失败时自动尝试 Google 和 DeepL
-export TRANSLATE_API=libre,google,deepl
+# LibreTranslate (免费，默认)
+export TRANSLATE_API=libre
 
-# 或者只用免费 API
-export TRANSLATE_API=google,libre
+# 多 API 优先级（推荐！按顺序尝试）
+export TRANSLATE_API=google-web,libre,ollama
 
-# 高质量优先
-export TRANSLATE_API=deepl,google
+# DeepL (高质量)
+export TRANSLATE_API=deepl
+export DEEPL_API_KEY=your-key
+
+# 百度翻译
+export TRANSLATE_API=baidu
+export BAIDU_APP_ID=your-id
+export BAIDU_SECRET_KEY=your-key
+```
+
+### 翻译 API 对比
+
+| API | 免费 | 质量 | 需要 Key |
+|-----|------|------|----------|
+| google-web | ✅ | ⭐⭐⭐⭐ | ❌ |
+| libre | ✅ | ⭐⭐⭐ | ❌ |
+| deepl | ✅ 50万字符/月 | ⭐⭐⭐⭐⭐ | ✅ |
+| baidu | ✅ 100万字符/月 | ⭐⭐⭐⭐ | ✅ |
+| ollama | ✅ 本地 | ⭐⭐⭐ | ❌ |
+
+## 故障排查
+
+### Hook 不生效
+
+1. 确认 hook 脚本已安装：`ls ~/.claude/hooks/`
+2. 确认通用配置已设置并包含 hooks
+3. 重启 Claude Code
+4. 开启调试：`export DEBUG=translator`
+
+### 翻译失败
+
+检查日志：
+```bash
+tail -f ~/.claude/translator-hook.log
+```
+
+常见错误：
+- `翻译请求超时` — 检查代理或网络
+- `翻译服务未找到` — Ollama 未运行或模型不存在
+- `API 认证失败` — 检查 API Key
+- `无法连接到翻译服务` — 检查代理地址
+
+### 手动测试 Hook
+
+```bash
+echo '{"prompt": "你好"}' | node src/user-prompt-hook.js
+```
+
+### 手动测试翻译
+
+```bash
+node -e "
+const Translator = require('./src/translator');
+const t = new Translator({api: 'libre'});
+t.toEnglish('你好').then(console.log);
+"
 ```
 
 ## 卸载
 
 ```bash
-./uninstall.sh
-```
+# 删除 hook 脚本
+rm -rf ~/.claude/hooks/
 
-## 故障排除
-
-### 翻译失败
-
-检查 API 连通性:
-
-```bash
-node test-api.js
-```
-
-### 翻译太慢
-
-1. 切换到更快的 API (推荐 DeepL 或 Google)
-2. 自建 LibreTranslate 服务
-
-## 开发
-
-```bash
-# 安装依赖
-npm install
-
-# 测试
-npm test
+# 在 cc-switch 通用配置中移除 hooks 和 env 配置
+# 重启 Claude Code
 ```
 
 ## License
