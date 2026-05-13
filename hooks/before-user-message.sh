@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-PLUGIN_DIR="${CLAUDE_TRANSLATOR_PLUGIN_DIR:-$HOME/.claude/plugins/claude-code-translator}"
+PLUGIN_DIR="${CLAUDE_TRANSLATOR_PLUGIN_DIR:-$(cd "$(dirname "$0")" && pwd)}"
 HOOK_SCRIPT="$PLUGIN_DIR/src/user-prompt-hook.js"
 
 if [ ! -f "$HOOK_SCRIPT" ]; then
