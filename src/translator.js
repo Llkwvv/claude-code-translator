@@ -82,10 +82,11 @@ class Translator {
 
   /**
    * 通用翻译方法 - 按优先级尝试多个 API
+   * 返回: { result: string, error: string | null }
    */
   async translate(text, source = 'auto', target = 'en') {
     if (!text || text.trim() === '') {
-      return text;
+      return { result: text, error: null };
     }
 
     const errors = [];
@@ -95,7 +96,7 @@ class Translator {
         const result = await provider.translate(text, source, target);
         if (result && result !== text) {
           this.currentApi = name; // 记录成功使用的 API
-          return result;
+          return { result, error: null };
         }
       } catch (error) {
         errors.push(`${name}: ${error.message}`);
@@ -103,15 +104,14 @@ class Translator {
       }
     }
 
-    // 所有 API 都失败，返回原文
-    if (errors.length > 0) {
-      console.error(`[Translator] All APIs failed: ${errors.join('; ')}`);
-    }
-    return text;
+    // 所有 API 都失败，返回原文和错误信息
+    const errorMsg = errors.length > 0 ? errors.join('; ') : 'Unknown error';
+    return { result: text, error: errorMsg };
   }
 
   /**
    * 中文 → 英文 (用于用户输入)
+   * 返回: { result: string, error: string | null }
    */
   async toEnglish(text) {
     if (this.direction === 'output') {
@@ -122,7 +122,10 @@ class Translator {
       return text;
     }
 
-    const result = await this.translate(text, 'auto', 'en');
+    const { result, error } = await this.translate(text, 'auto', 'en');
+    if (error) {
+      console.error(`[Translator] All APIs failed: ${error}`);
+    }
     if (this.showOriginal && result !== text) {
       return `${result}\n\n---\n[原文]: ${text}`;
     }
@@ -141,7 +144,10 @@ class Translator {
       return text;
     }
 
-    const result = await this.translate(text, 'en', 'zh');
+    const { result, error } = await this.translate(text, 'en', 'zh');
+    if (error) {
+      console.error(`[Translator] All APIs failed: ${error}`);
+    }
     if (this.showOriginal && result !== text) {
       return `${result}\n\n---\n[Original]: ${text}`;
     }
