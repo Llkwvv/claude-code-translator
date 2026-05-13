@@ -73,20 +73,24 @@ else
     log_warn "未找到 npm，请手动安装依赖：cd $PLUGIN_DIR && npm install"
 fi
 
-# 合并 settings.json
-log_info "配置 settings.json..."
+# 配置 settings.json（translator 配置）和 settings.local.json（hook 配置）
+log_info "配置 settings..."
 
 mkdir -p "$HOOKS_DIR"
 
+# 备份 settings.json（如果存在）
 if [ -f "$SETTINGS_FILE" ]; then
     cp "$SETTINGS_FILE" "$SETTINGS_FILE.backup.$(date +%Y%m%d%H%M%S)"
 fi
 
-SETTINGS_FILE="$SETTINGS_FILE" HOOK_FILE="$HOOK_FILE" STOP_HOOK_FILE="$STOP_HOOK_FILE" node <<'NODE'
+# 设置 local 文件路径
+LOCAL_SETTINGS_FILE="$CLAUDE_DIR/settings.local.json"
+
+# 配置 settings.json - translator 配置（不会被 /model 覆盖）
+SETTINGS_FILE="$SETTINGS_FILE" node <<'NODE'
 const fs = require('fs');
 
 const settingsFile = process.env.SETTINGS_FILE;
-const hookFile = process.env.HOOK_FILE;
 
 let settings = {};
 if (fs.existsSync(settingsFile)) {
@@ -108,47 +112,71 @@ settings.translator = {
   showOriginal: settings.translator?.showOriginal ?? false
 };
 
-settings.hooks = settings.hooks || {};
-settings.hooks.UserPromptSubmit = settings.hooks.UserPromptSubmit || [];
-settings.hooks.Stop = settings.hooks.Stop || [];
+fs.writeFileSync(settingsFile, `${JSON.stringify(settings, null, 2)}\n`);
+NODE
+log_success "settings.json 已更新（translator 配置）"
 
-const command = hookFile;
-const hasTranslatorHook = settings.hooks.UserPromptSubmit.some((entry) =>
-  Array.isArray(entry.hooks) && entry.hooks.some((hook) => hook.command === command)
+# 配置 settings.local.json - hook 配置（不会被 /model 覆盖）
+HOOK_FILE="$HOOK_FILE" STOP_HOOK_FILE="$STOP_HOOK_FILE" CLAUDE_DIR="$CLAUDE_DIR" node <<'NODE'
+const fs = require('fs');
+
+const hookFile = process.env.HOOK_FILE;
+const stopHookFile = process.env.STOP_HOOK_FILE;
+const claudDir = process.env.CLAUDE_DIR;
+const localSettingsFile = claudDir + '/settings.local.json';
+
+// 读取现有配置（如果存在）
+let localSettings = {};
+if (fs.existsSync(localSettingsFile)) {
+  const content = fs.readFileSync(localSettingsFile, 'utf8').trim();
+  if (content) {
+    try {
+      localSettings = JSON.parse(content);
+    } catch (error) {
+      console.error(`警告：${localSettingsFile} 解析失败，将覆盖: ${error.message}`);
+    }
+  }
+}
+
+// 确保 hooks 结构存在
+localSettings.hooks = localSettings.hooks || {};
+localSettings.hooks.UserPromptSubmit = localSettings.hooks.UserPromptSubmit || [];
+localSettings.hooks.Stop = localSettings.hooks.Stop || [];
+
+// 检查并添加 before-user-message hook
+const hasUserHook = localSettings.hooks.UserPromptSubmit.some((entry) =>
+  Array.isArray(entry.hooks) && entry.hooks.some((hook) => hook.command === hookFile)
 );
 
-if (!hasTranslatorHook) {
-  settings.hooks.UserPromptSubmit.push({
-    hooks: [
-      {
-        type: 'command',
-        command,
-        timeout: 30
-      }
-    ]
+if (!hasUserHook) {
+  localSettings.hooks.UserPromptSubmit.push({
+    hooks: [{
+      type: 'command',
+      command: hookFile,
+      timeout: 30
+    }]
   });
 }
 
-const stopCommand = process.env.STOP_HOOK_FILE;
-const hasStopHook = settings.hooks.Stop.some((entry) =>
-  Array.isArray(entry.hooks) && entry.hooks.some((hook) => hook.command === stopCommand)
+// 检查并添加 after-model-response hook
+const hasStopHook = localSettings.hooks.Stop.some((entry) =>
+  Array.isArray(entry.hooks) && entry.hooks.some((hook) => hook.command === stopHookFile)
 );
 
 if (!hasStopHook) {
-  settings.hooks.Stop.push({
-    hooks: [
-      {
-        type: 'command',
-        command: stopCommand,
-        timeout: 30
-      }
-    ]
+  localSettings.hooks.Stop.push({
+    hooks: [{
+      type: 'command',
+      command: stopHookFile,
+      timeout: 30
+    }]
   });
 }
 
-fs.writeFileSync(settingsFile, `${JSON.stringify(settings, null, 2)}\n`);
+fs.writeFileSync(localSettingsFile, `${JSON.stringify(localSettings, null, 2)}\n`);
+console.log(`Hook 配置已写入：${localSettingsFile}`);
 NODE
-log_success "settings.json 已更新"
+log_success "settings.local.json 已更新（hook 配置）"
 
 # 安装 Hook
 log_info "安装输入 Hook..."

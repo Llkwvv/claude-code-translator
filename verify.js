@@ -36,13 +36,14 @@ if (fs.existsSync(pluginDir)) {
   allPassed &= log(false, '插件目录不存在，请先运行 ./install.sh');
 }
 
-// 2. 检查 settings.json 配置
+// 2. 检查 settings.json 配置（translator）
 console.log('\n2. 检查 settings.json 配置...');
 const settingsPath = path.join(process.env.HOME, '.claude', 'settings.json');
 if (fs.existsSync(settingsPath)) {
   const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
   if (settings.translator && settings.translator.enabled !== false) {
     log(true, 'translator 配置已启用');
+    console.log(`   API: ${settings.translator.api}, 方向：${settings.translator.direction}`);
   } else {
     log(false, 'translator 配置未找到或未启用');
   }
@@ -50,17 +51,30 @@ if (fs.existsSync(settingsPath)) {
   log(false, 'settings.json 不存在');
 }
 
-// 3. 检查 Hook
-console.log('\n3. 检查 Hook...');
+// 3. 检查 settings.local.json 配置（hooks）
+console.log('\n3. 检查 settings.local.json 配置...');
+const localSettingsPath = path.join(process.env.HOME, '.claude', 'settings.local.json');
+if (fs.existsSync(localSettingsPath)) {
+  const localSettings = JSON.parse(fs.readFileSync(localSettingsPath, 'utf8'));
+  if (localSettings.hooks && localSettings.hooks.UserPromptSubmit && localSettings.hooks.UserPromptSubmit.length > 0) {
+    log(true, 'UserPromptSubmit hook 已配置');
+  } else {
+    log(false, 'UserPromptSubmit hook 未配置');
+  }
+  if (localSettings.hooks && localSettings.hooks.Stop && localSettings.hooks.Stop.length > 0) {
+    log(true, 'Stop hook 已配置');
+  } else {
+    log(false, 'Stop hook 未配置');
+  }
+} else {
+  log(false, 'settings.local.json 不存在');
+}
+
+// 4. 检查 Hook 脚本
+console.log('\n4. 检查 Hook 脚本...');
 const hookPath = path.join(process.env.HOME, '.claude', 'hooks', 'before-user-message.sh');
 if (fs.existsSync(hookPath)) {
   log(true, 'Hook 脚本存在');
-  const content = fs.readFileSync(hookPath, 'utf8');
-  if (content.includes('libretranslate') || content.includes('translate')) {
-    log(true, 'Hook 包含翻译逻辑');
-  } else {
-    log(false, 'Hook 未包含翻译逻辑');
-  }
 } else {
   log(false, 'Hook 脚本不存在');
 }
@@ -72,7 +86,7 @@ if (fs.existsSync(stopHookPath)) {
   log(false, '输出 Hook 脚本不存在');
 }
 
-// 4. 测试翻译 API
+// 5. 测试翻译 API
 console.log('\n4. 测试翻译 API (LibreTranslate)...');
 const Translator = require('./src/translator');
 const translator = new Translator({ api: 'libre' });

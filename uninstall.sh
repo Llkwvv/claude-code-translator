@@ -53,18 +53,17 @@ rm -f "$HOOKS_DIR/before-user-message.sh" 2>/dev/null || true
 rm -f "$HOOKS_DIR/after-model-response.sh" 2>/dev/null || true
 log_success "Hook 已删除"
 
-# 清理 settings.json
-log_info "清理 settings.json..."
+# 清理 settings.json（translator 配置）和 settings.local.json（hook 配置）
+log_info "清理 settings..."
+
 if [ -f "$SETTINGS_FILE" ]; then
     # 备份
     cp "$SETTINGS_FILE" "$SETTINGS_FILE.backup.$(date +%Y%m%d%H%M%S)"
 
-    SETTINGS_FILE="$SETTINGS_FILE" HOOK_FILE="$HOOK_FILE" STOP_HOOK_FILE="$STOP_HOOK_FILE" node <<'NODE'
+    SETTINGS_FILE="$SETTINGS_FILE" node <<'NODE'
 const fs = require('fs');
 
 const settingsFile = process.env.SETTINGS_FILE;
-const hookFile = process.env.HOOK_FILE;
-const stopHookFile = process.env.STOP_HOOK_FILE;
 
 let settings = {};
 try {
@@ -75,8 +74,32 @@ try {
 
 delete settings.translator;
 
-if (settings.hooks && Array.isArray(settings.hooks.UserPromptSubmit)) {
-  settings.hooks.UserPromptSubmit = settings.hooks.UserPromptSubmit
+fs.writeFileSync(settingsFile, `${JSON.stringify(settings, null, 2)}\n`);
+NODE
+    log_success "settings.json 已清理"
+fi
+
+# 清理 settings.local.json - hook 配置
+LOCAL_SETTINGS_FILE="$CLAUDE_DIR/settings.local.json"
+if [ -f "$LOCAL_SETTINGS_FILE" ]; then
+    HOOK_FILE="$HOOK_FILE" STOP_HOOK_FILE="$STOP_HOOK_FILE" node <<'NODE'
+const fs = require('fs');
+
+const hookFile = process.env.HOOK_FILE;
+const stopHookFile = process.env.STOP_HOOK_FILE;
+const localSettingsFile = process.env.LOCAL_SETTINGS_FILE;
+
+let localSettings = {};
+try {
+  localSettings = JSON.parse(fs.readFileSync(localSettingsFile, 'utf8'));
+} catch (error) {
+  console.error(`警告：${localSettingsFile} 解析失败: ${error.message}`);
+  process.exit(0);
+}
+
+// 清理 UserPromptSubmit hooks
+if (localSettings.hooks && Array.isArray(localSettings.hooks.UserPromptSubmit)) {
+  localSettings.hooks.UserPromptSubmit = localSettings.hooks.UserPromptSubmit
     .map((entry) => ({
       ...entry,
       hooks: Array.isArray(entry.hooks)
@@ -85,13 +108,14 @@ if (settings.hooks && Array.isArray(settings.hooks.UserPromptSubmit)) {
     }))
     .filter((entry) => Array.isArray(entry.hooks) && entry.hooks.length > 0);
 
-  if (settings.hooks.UserPromptSubmit.length === 0) {
-    delete settings.hooks.UserPromptSubmit;
+  if (localSettings.hooks.UserPromptSubmit.length === 0) {
+    delete localSettings.hooks.UserPromptSubmit;
   }
 }
 
-if (settings.hooks && Array.isArray(settings.hooks.Stop)) {
-  settings.hooks.Stop = settings.hooks.Stop
+// 清理 Stop hooks
+if (localSettings.hooks && Array.isArray(localSettings.hooks.Stop)) {
+  localSettings.hooks.Stop = localSettings.hooks.Stop
     .map((entry) => ({
       ...entry,
       hooks: Array.isArray(entry.hooks)
@@ -100,18 +124,26 @@ if (settings.hooks && Array.isArray(settings.hooks.Stop)) {
     }))
     .filter((entry) => Array.isArray(entry.hooks) && entry.hooks.length > 0);
 
-  if (settings.hooks.Stop.length === 0) {
-    delete settings.hooks.Stop;
+  if (localSettings.hooks.Stop.length === 0) {
+    delete localSettings.hooks.Stop;
   }
 }
 
-if (settings.hooks && Object.keys(settings.hooks).length === 0) {
-  delete settings.hooks;
+// 如果 hooks 为空，删除整个 hooks 对象
+if (localSettings.hooks && Object.keys(localSettings.hooks).length === 0) {
+  delete localSettings.hooks;
 }
 
-fs.writeFileSync(settingsFile, `${JSON.stringify(settings, null, 2)}\n`);
+// 如果文件变为空对象，可以选择删除它
+if (Object.keys(localSettings).length === 0) {
+  fs.unlinkSync(localSettingsFile);
+  console.log(`已删除空的 ${localSettingsFile}`);
+} else {
+  fs.writeFileSync(localSettingsFile, `${JSON.stringify(localSettings, null, 2)}\n`);
+}
 NODE
-    log_success "settings.json 已清理"
+    LOCAL_SETTINGS_FILE="$LOCAL_SETTINGS_FILE" bash -c 'echo "LOCAL_SETTINGS_FILE=$LOCAL_SETTINGS_FILE"'
+    log_success "settings.local.json 已清理"
 fi
 
 echo ""
