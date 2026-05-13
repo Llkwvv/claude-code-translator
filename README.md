@@ -55,6 +55,10 @@ export BAIDU_SECRET_KEY=your-secret-key
 # 使用 LibreTranslate 自建服务
 export TRANSLATE_API=libre
 export LIBRE_ENDPOINT=http://localhost:5000/translate
+
+# 使用多 API 优先级配置 (推荐！)
+# 按顺序尝试多个 API，提高成功率
+export TRANSLATE_API=libre,google,deepl
 ```
 
 ### 配置文件
@@ -90,6 +94,20 @@ export LIBRE_ENDPOINT=http://localhost:5000/translate
 | Google Translate | $20/月后付费 | ⭐⭐⭐⭐ | ✅ |
 | 百度翻译 | 100 万字符/月 | ⭐⭐⭐⭐ | ✅ |
 | Ollama 本地 | 免费 | ⭐⭐⭐ | ❌ |
+
+### 推荐配置
+
+**多 API 优先级配置 (最佳实践)**:
+```bash
+# 默认使用 LibreTranslate，失败时自动尝试 Google 和 DeepL
+export TRANSLATE_API=libre,google,deepl
+
+# 或者只用免费 API
+export TRANSLATE_API=google,libre
+
+# 高质量优先
+export TRANSLATE_API=deepl,google
+```
 
 ## 卸载
 

@@ -2,19 +2,24 @@
  * Ollama Provider
  * 本地大模型翻译，保护隐私
  * 需要安装 Ollama: https://ollama.ai
- * 推荐模型：llama3, qwen, chatglm
+ * 推荐模型：nomic-embed-text (轻量), qwen2.5:0.5b (中文好)
  */
 
 const axios = require('axios');
 
 const ENDPOINT = process.env.OLLAMA_ENDPOINT || 'http://localhost:11434/api/generate';
-const MODEL = process.env.OLLAMA_MODEL || 'llama3';
+const MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b';
 
 async function translate(text, source = 'auto', target = 'en') {
-  try {
-    const targetLang = target === 'zh' ? '中文' : target === 'en' ? '英文' : target;
+  if (!text || text.trim() === '') {
+    return text;
+  }
 
-    const prompt = `Translate the following text to ${targetLang}. Only output the translation, nothing else:
+  try {
+    const targetLang = target === 'zh' ? 'Chinese' : 'English';
+
+    // 优化 prompt，让模型只输出翻译结果
+    const prompt = `Translate the following ${source === 'zh' ? 'Chinese' : 'English'} text to ${targetLang}. Output ONLY the translation, no explanations or quotes:
 
 ${text}`;
 
@@ -24,19 +29,25 @@ ${text}`;
       stream: false,
       options: {
         temperature: 0.3,
-        top_p: 0.9
+        top_p: 0.9,
+        num_predict: 512  // 限制输出长度
       }
     }, {
-      timeout: 30000
+      timeout: 60000,  // 增加超时时间
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
 
-    return response.data.response?.trim() || text;
+    const result = response.data.response?.trim() || text;
+    // 清理可能的前后引号
+    return result.replace(/^["']|["']$/g, '');
   } catch (error) {
     if (error.code === 'ECONNREFUSED') {
-      console.error('[Ollama] Cannot connect. Make sure Ollama is running.');
+      throw new Error('Ollama not running. Start with: ollama serve');
     }
-    if (error.response) {
-      throw new Error(`Ollama API error: ${error.response.status}`);
+    if (error.code === 'ECONNRESET') {
+      throw new Error('Ollama request timed out');
     }
     throw error;
   }

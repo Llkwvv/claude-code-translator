@@ -5,27 +5,47 @@
 
 const providerLoaders = {
   libre: () => require('./providers/libre'),
+  'google-web': () => require('./providers/google-web'),
   deepl: () => require('./providers/deepl'),
   google: () => require('./providers/google'),
   baidu: () => require('./providers/baidu'),
+  bing: () => require('./providers/bing'),
+  'azure-cn': () => require('./providers/azure-cn'),
   ollama: () => require('./providers/ollama')
 };
 
 class Translator {
   constructor(config = {}) {
-    this.api = config.api || process.env.TRANSLATE_API || 'libre';
-    this.direction = config.direction || 'both'; // 'input', 'output', 'both'
+    this.direction = config.direction || process.env.TRANSLATE_DIRECTION || 'both';
     this.autoDetect = config.autoDetect !== false;
     this.showOriginal = config.showOriginal || false;
 
-    const loadProvider = providerLoaders[this.api];
-    if (!loadProvider) {
-      console.warn(`[Translator] Unknown API "${this.api}", falling back to libre`);
-      this.api = 'libre';
-      this.provider = providerLoaders.libre();
-    } else {
-      this.provider = loadProvider();
+    // 支持多 API 优先级配置 (逗号分隔或数组)
+    let apiList = config.api || process.env.TRANSLATE_API || 'libre';
+    if (typeof apiList === 'string' && apiList.includes(',')) {
+      apiList = apiList.split(',').map(a => a.trim()).filter(a => a);
+    } else if (!Array.isArray(apiList)) {
+      apiList = [apiList];
     }
+
+    this.apiStack = [];
+    for (const api of apiList) {
+      const loadProvider = providerLoaders[api];
+      if (loadProvider) {
+        this.apiStack.push({
+          name: api,
+          provider: loadProvider()
+        });
+      }
+    }
+
+    // 至少有一个可用的提供者
+    if (this.apiStack.length === 0) {
+      console.warn(`[Translator] No valid APIs configured, falling back to libre`);
+      this.apiStack = [{ name: 'libre', provider: providerLoaders.libre() }];
+    }
+
+    this.currentApi = this.apiStack[0]?.name || 'libre';
   }
 
   /**
@@ -61,21 +81,33 @@ class Translator {
   }
 
   /**
-   * 通用翻译方法
+   * 通用翻译方法 - 按优先级尝试多个 API
    */
   async translate(text, source = 'auto', target = 'en') {
     if (!text || text.trim() === '') {
       return text;
     }
 
-    try {
-      const result = await this.provider.translate(text, source, target);
-      return result;
-    } catch (error) {
-      console.error(`[Translator] ${this.api} error:`, error.message);
-      // 翻译失败时返回原文
-      return text;
+    const errors = [];
+
+    for (const { name, provider } of this.apiStack) {
+      try {
+        const result = await provider.translate(text, source, target);
+        if (result && result !== text) {
+          this.currentApi = name; // 记录成功使用的 API
+          return result;
+        }
+      } catch (error) {
+        errors.push(`${name}: ${error.message}`);
+        // 继续尝试下一个 API
+      }
     }
+
+    // 所有 API 都失败，返回原文
+    if (errors.length > 0) {
+      console.error(`[Translator] All APIs failed: ${errors.join('; ')}`);
+    }
+    return text;
   }
 
   /**
