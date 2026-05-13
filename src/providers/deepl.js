@@ -5,6 +5,7 @@
  */
 
 const axios = require('axios');
+const { getProxyConfig } = require('./proxy');
 
 const API_KEY = process.env.DEEPL_API_KEY;
 const ENDPOINT = 'https://api-free.deepl.com/v2/translate';
@@ -34,7 +35,8 @@ async function translate(text, source = 'auto', target = 'en') {
     }
 
     const response = await axios.post(ENDPOINT, params, {
-      timeout: 10000
+      timeout: 10000,
+      proxy: getProxyConfig()
     });
 
     return response.data.translations?.[0]?.text || text;

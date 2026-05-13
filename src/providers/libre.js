@@ -6,15 +6,15 @@
  */
 
 const axios = require('axios');
+const { getProxyConfig } = require('./proxy');
 
 const ENDPOINT = process.env.LIBRE_ENDPOINT || 'https://libretranslate.de/translate';
-const USE_PROXY = process.env.TRANSLATE_USE_PROXY === 'true';
 const GOOGLE_ENDPOINT = 'https://translate.googleapis.com/translate_a/single';
 
 function requestOptions(timeout = 10000) {
   return {
-    proxy: USE_PROXY ? undefined : false,
-    timeout
+    timeout,
+    proxy: getProxyConfig()
   };
 }
 

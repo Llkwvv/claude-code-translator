@@ -5,6 +5,7 @@
  */
 
 const axios = require('axios');
+const { getProxyConfig } = require('./proxy');
 
 const ENDPOINT = 'https://translate.googleapis.com/translate_a/single';
 
@@ -20,6 +21,7 @@ async function translate(text, source = 'auto', target = 'en') {
 
     const response = await axios.get(`${ENDPOINT}?${params.toString()}`, {
       timeout: 10000,
+      proxy: getProxyConfig(),
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       }

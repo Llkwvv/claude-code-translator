@@ -6,6 +6,7 @@
 
 const axios = require('axios');
 const crypto = require('crypto');
+const { getProxyConfig } = require('./proxy');
 
 const APP_ID = process.env.BAIDU_APP_ID;
 const SECRET_KEY = process.env.BAIDU_SECRET_KEY;
@@ -38,7 +39,8 @@ async function translate(text, source = 'auto', target = 'en') {
     });
 
     const response = await axios.get(`${ENDPOINT}?${params.toString()}`, {
-      timeout: 10000
+      timeout: 10000,
+      proxy: getProxyConfig()
     });
 
     const result = response.data.trans_result?.map(t => t.dst)?.join('') || text;

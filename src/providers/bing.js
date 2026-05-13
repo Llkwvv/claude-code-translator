@@ -5,6 +5,7 @@
  */
 
 const axios = require('axios');
+const { getProxyConfig } = require('./proxy');
 
 const API_KEY = process.env.BING_API_KEY;
 const ENDPOINT = 'https://api.cognitive.microsofttranslator.com/translate';
@@ -34,7 +35,8 @@ async function translate(text, source = 'auto', target = 'en') {
         'Ocp-Apim-Subscription-Key': API_KEY,
         'Content-Type': 'application/json'
       },
-      timeout: 10000
+      timeout: 10000,
+      proxy: getProxyConfig()
     });
 
     const result = response.data[0]?.translations?.[0]?.text || text;

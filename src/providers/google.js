@@ -6,6 +6,7 @@
  */
 
 const axios = require('axios');
+const { getProxyConfig } = require('./proxy');
 
 const API_KEY = process.env.GOOGLE_API_KEY;
 const ENDPOINT = 'https://translation.googleapis.com/language/translate/v2';
@@ -32,7 +33,8 @@ async function translate(text, source = 'auto', target = 'en') {
     }
 
     const response = await axios.get(`${ENDPOINT}?${params.toString()}`, {
-      timeout: 10000
+      timeout: 10000,
+      proxy: getProxyConfig()
     });
 
     return response.data.data?.translations?.[0]?.translatedText || text;
