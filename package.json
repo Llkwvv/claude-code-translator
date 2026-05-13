@@ -1,0 +1,26 @@
+{
+  "name": "claude-code-translator",
+  "version": "1.0.0",
+  "description": "双向翻译插件：中文输入 → 英文发送给 Claude，英文输出 → 中文显示",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node test/test.js",
+    "test:api": "node test/test-api.js",
+    "plugin:install": "./install.sh",
+    "plugin:uninstall": "./uninstall.sh"
+  },
+  "keywords": [
+    "claude-code",
+    "translator",
+    "chinese",
+    "i18n"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
