@@ -104,6 +104,8 @@ Stop Hook 翻译后显示：你好！有什么我可以帮你的吗？
 | `TRANSLATE_DIRECTION` | 翻译方向 | `both` |
 | `TRANSLATE_AUTO_DETECT` | 自动检测语言 | `true` |
 | `HOOK_LOG_FILE` | Hook 日志文件路径 | `~/.claude/translator-hook.log` |
+| `OLLAMA_MODEL` | Ollama 模型名称 | `qwen2.5:0.5b` |
+| `OLLAMA_ENDPOINT` | Ollama API 地址 | `http://localhost:11434/api/generate` |
 
 ### 翻译 API 切换
 
@@ -122,17 +124,47 @@ export DEEPL_API_KEY=your-key
 export TRANSLATE_API=baidu
 export BAIDU_APP_ID=your-id
 export BAIDU_SECRET_KEY=your-key
+
+# Ollama (本地大模型，保护隐私)
+export TRANSLATE_API=ollama
+export OLLAMA_MODEL=llamafamily/llama3-chinese-8b-instruct
+export OLLAMA_ENDPOINT=http://localhost:11434/api/generate
+```
+
+### Ollama 快速开始
+
+1. 安装 Ollama: https://ollama.ai
+
+2. 拉取推荐模型：
+```bash
+# 推荐：Llama3 中文优化版
+ollama pull llamafamily/llama3-chinese-8b-instruct
+
+# 其他可选模型
+ollama pull qwen2.5:0.5b
+ollama pull llama3.2
+```
+
+3. 启动 Ollama 服务：
+```bash
+ollama serve
+```
+
+4. 配置环境变量并测试：
+```bash
+export TRANSLATE_API=ollama
+export OLLAMA_MODEL=llamafamily/llama3-chinese-8b-instruct
 ```
 
 ### 翻译 API 对比
 
-| API | 免费 | 质量 | 需要 Key |
-|-----|------|------|----------|
-| google-web | ✅ | ⭐⭐⭐⭐ | ❌ |
-| libre | ✅ | ⭐⭐⭐ | ❌ |
+| API | 免费 | 质量 | 需要 Key | 需要安装 | 离线可用 |
+|-----|------|------|----------|----------|----------|
+| google-web | ✅ | ⭐⭐⭐⭐ | ❌ | ❌ | ❌ |
+| libre | ✅ | ⭐⭐⭐ | ❌ | ❌ | ❌ |
 | deepl | ✅ 50万字符/月 | ⭐⭐⭐⭐⭐ | ✅ |
 | baidu | ✅ 100万字符/月 | ⭐⭐⭐⭐ | ✅ |
-| ollama | ✅ 本地 | ⭐⭐⭐ | ❌ |
+| ollama | ✅ 本地 | ⭐⭐⭐~⭐⭐⭐⭐ | ❌ | ✅ | ✅ |
 
 ## 故障排查
 
