@@ -1,8 +1,10 @@
 /**
  * Proxy configuration for translation providers
+ * Default proxy: http://127.0.0.1:7897
  */
 
-const PROXY_URL = process.env.HTTP_PROXY || process.env.ALL_PROXY || process.env.http_proxy || null;
+const DEFAULT_PROXY = 'http://127.0.0.1:7897';
+const PROXY_URL = process.env.HTTP_PROXY || process.env.ALL_PROXY || process.env.http_proxy || DEFAULT_PROXY;
 
 function getProxyConfig() {
   if (!PROXY_URL) {
