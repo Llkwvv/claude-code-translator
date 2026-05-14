@@ -2,13 +2,13 @@
  * Ollama Provider
  * 本地大模型翻译，保护隐私
  * 需要安装 Ollama: https://ollama.ai
- * 推荐模型：nomic-embed-text (轻量), qwen2.5:0.5b (中文好)
+ * 推荐模型：llamafamily/llama3-chinese-8b-instruct (中文优秀)
  */
 
 const axios = require('axios');
 
 const ENDPOINT = process.env.OLLAMA_ENDPOINT || 'http://localhost:11434/api/generate';
-const MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b';
+const MODEL = process.env.OLLAMA_MODEL || 'llamafamily/llama3-chinese-8b-instruct';
 
 async function translate(text, source = 'auto', target = 'en') {
   if (!text || text.trim() === '') {
