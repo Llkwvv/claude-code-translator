@@ -197,6 +197,15 @@ tail -f ~/.claude/translator-hook.log
 
 ### 临时禁用/启用翻译（会话级）
 
+首先确保 `~/.local/bin` 在你的 `PATH` 中：
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc  # 永久生效
+```
+
+然后使用以下命令控制翻译器：
+
 ```bash
 # 禁用当前会话的翻译
 claude-translate-off
