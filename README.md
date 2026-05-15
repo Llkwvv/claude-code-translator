@@ -115,7 +115,7 @@ Stop Hook 翻译后显示：你好！有什么我可以帮你的吗？
 export TRANSLATE_API=ollama,libre
 
 # 多 API 优先级（按顺序尝试）
-export TRANSLATE_API=google-web,ollama,libre
+export TRANSLATE_API=ollama,google-web,libre
 
 # DeepL (高质量)
 export TRANSLATE_API=deepl
