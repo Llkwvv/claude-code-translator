@@ -117,6 +117,12 @@ export TRANSLATE_API=ollama,libre
 # 多 API 优先级（按顺序尝试）
 export TRANSLATE_API=ollama,google-web,libre
 
+# 临时禁用翻译（当前终端会话）
+export TRANSLATE_ENABLED=false
+
+# 临时启用翻译（覆盖 settings.json 设置）
+export TRANSLATE_ENABLED=true
+
 # DeepL (高质量)
 export TRANSLATE_API=deepl
 export DEEPL_API_KEY=your-key
@@ -188,6 +194,23 @@ tail -f ~/.claude/translator-hook.log
 - `翻译服务未找到` — Ollama 未运行或模型不存在
 - `API 认证失败` — 检查 API Key
 - `无法连接到翻译服务` — 检查代理地址
+
+### 临时禁用/启用翻译（会话级）
+
+```bash
+# 禁用当前会话的翻译
+claude-translate-off
+
+# 启用当前会话的翻译
+claude-translate-on
+
+# 切换当前会话的翻译状态
+claude-translate-toggle
+
+# 或直接通过环境变量
+export TRANSLATE_ENABLED=false  # 禁用
+export TRANSLATE_ENABLED=true   # 启用
+```
 
 ### 手动测试 Hook
 

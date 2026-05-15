@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# Enable translator for the current session
+# Usage: claude-translate-on
+#
+
+SESSION_MARKER="$HOME/.claude/translate-session-mode"
+mkdir -p "$(dirname "$SESSION_MARKER")"
+
+echo "on" > "$SESSION_MARKER"
+echo "✅ Translator enabled for this session"
+echo "   (Marker: $SESSION_MARKER)"
+
+# Optional: show current mode
+if [ -f "$SESSION_MARKER" ]; then
+    echo "   Current mode: $(cat "$SESSION_MARKER")"
+fi
