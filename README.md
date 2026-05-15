@@ -100,7 +100,8 @@ Stop Hook 翻译后显示：你好！有什么我可以帮你的吗？
 | `HTTP_PROXY` | HTTP 代理地址 | - |
 | `ALL_PROXY` | 全局代理地址 | - |
 | `DEBUG` | 开启调试日志 | `translator` |
-| `TRANSLATE_API` | 翻译 API | `libre` |
+| `TRANSLATE_API` | 翻译 API | `ollama,libre` |
+| `TRANSLATE_ENABLED` | 启用翻译插件 | `true` |
 | `TRANSLATE_DIRECTION` | 翻译方向 | `both` |
 | `TRANSLATE_AUTO_DETECT` | 自动检测语言 | `true` |
 | `HOOK_LOG_FILE` | Hook 日志文件路径 | `~/.claude/translator-hook.log` |
@@ -110,11 +111,11 @@ Stop Hook 翻译后显示：你好！有什么我可以帮你的吗？
 ### 翻译 API 切换
 
 ```bash
-# LibreTranslate (免费，默认)
-export TRANSLATE_API=libre
+# Ollama 本地模型 (默认，优先尝试)
+export TRANSLATE_API=ollama,libre
 
-# 多 API 优先级（推荐！按顺序尝试）
-export TRANSLATE_API=google-web,libre,ollama
+# 多 API 优先级（按顺序尝试）
+export TRANSLATE_API=google-web,ollama,libre
 
 # DeepL (高质量)
 export TRANSLATE_API=deepl

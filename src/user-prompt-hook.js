@@ -104,7 +104,7 @@ async function main() {
   info(`Auto-detect: ${process.env.TRANSLATE_AUTO_DETECT !== 'false'}`);
 
   const translator = new Translator({
-    api: process.env.TRANSLATE_API || 'libre',
+    api: process.env.TRANSLATE_API || 'ollama,libre',
     direction: process.env.TRANSLATE_DIRECTION || 'both',
     autoDetect: process.env.TRANSLATE_AUTO_DETECT !== 'false',
     showOriginal: false

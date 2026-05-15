@@ -21,7 +21,7 @@ class Translator {
     this.showOriginal = config.showOriginal || false;
 
     // 支持多 API 优先级配置 (逗号分隔或数组)
-    let apiList = config.api || process.env.TRANSLATE_API || 'libre';
+    let apiList = config.api || process.env.TRANSLATE_API || 'ollama,libre';
     if (typeof apiList === 'string' && apiList.includes(',')) {
       apiList = apiList.split(',').map(a => a.trim()).filter(a => a);
     } else if (!Array.isArray(apiList)) {

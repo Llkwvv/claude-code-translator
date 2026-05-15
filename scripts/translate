@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# 翻译并直接发送给 Claude Code
+# 用法: ./scripts/translate "你要说的话"
+#
+
+# 从 scripts 目录切换到项目根目录
+cd "$(dirname "$0")/.."
+
+# 设置代理
+export HTTP_PROXY=http://127.0.0.1:7897
+export ALL_PROXY=http://127.0.0.1:7897
+
+TEXT="$1"
+
+if [ -z "$TEXT" ]; then
+  echo "用法: translate \"中文\""
+  echo "示例: translate \"你好，世界\""
+  exit 1
+fi
+
+# 使用 Node.js 翻译
+TRANSLATED=$(node -e "
+const Translator = require('./src/translator');
+const t = new Translator({api: 'libre'});
+t.toEnglish('$TEXT').then(r => console.log(r)).catch(e => console.error(e.message));
+" 2>&1 | tail -1)
+
+# 检查翻译是否成功
+if [ "$TRANSLATED" = "$TEXT" ] || [ -z "$TRANSLATED" ]; then
+  echo "翻译失败，请检查网络或代理"
+  exit 1
+fi
+
+echo "原文: $TEXT"
+echo "翻译: $TRANSLATED"
+echo ""
+echo "发送中..."
+
+# 发送给 Claude Code
+echo "$TRANSLATED" | claude -p 2>&1

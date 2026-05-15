@@ -14,7 +14,7 @@ const Translator = require('./translator');
 
 // 从配置或环境变量初始化
 const translator = new Translator({
-  api: process.env.TRANSLATE_API || 'libre',
+  api: process.env.TRANSLATE_API || 'ollama,libre',
   direction: process.env.TRANSLATE_DIRECTION || 'both',
   autoDetect: process.env.TRANSLATE_AUTO_DETECT !== 'false',
   showOriginal: process.env.TRANSLATE_SHOW_ORIGINAL === 'true'

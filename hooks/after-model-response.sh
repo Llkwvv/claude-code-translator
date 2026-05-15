@@ -6,6 +6,11 @@
 
 set -euo pipefail
 
+# 如果 TRANSLATE_ENABLED=false，跳过翻译直接放行
+if [ "${TRANSLATE_ENABLED:-true}" = "false" ]; then
+    exit 0
+fi
+
 PLUGIN_DIR="${CLAUDE_TRANSLATOR_PLUGIN_DIR:-$HOME/.claude/plugins/claude-code-translator}"
 HOOK_SCRIPT="$PLUGIN_DIR/src/stop-response-hook.js"
 
