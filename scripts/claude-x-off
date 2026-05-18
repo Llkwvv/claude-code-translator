@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# Launch Claude Code with translation DISABLED for this session only
+# Usage: claude-x-off [claude args...]
+#
+
+export CLAUDE_SESSION_ID="session-$$"
+echo "off" > "$HOME/.claude/translate-session-$CLAUDE_SESSION_ID"
+
+# Cleanup on exit
+cleanup() {
+    rm -f "$HOME/.claude/translate-session-$CLAUDE_SESSION_ID"
+}
+trap cleanup EXIT
+
+# Launch claude with session ID
+exec claude "$@"

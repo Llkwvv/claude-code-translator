@@ -221,6 +221,36 @@ export TRANSLATE_ENABLED=false  # 禁用
 export TRANSLATE_ENABLED=true   # 启用
 ```
 
+### 在 Claude Code 中一键切换翻译（推荐）
+
+在 Claude Code 会话中，直接使用 `/translate-toggle` 斜杠命令即可快速切换翻译状态：
+
+```
+/translate-toggle
+✅ Translator enabled for this session
+   Current mode: on
+
+   🔤 中文输入 → English → Claude
+   🇨🇳 Claude英文响应 → 中文显示
+
+/translate-toggle
+🚫 Translator disabled for this session
+   Current mode: off
+
+   Messages pass through without translation
+```
+
+**特点**：
+- 一键切换，无需离开 Claude Code 界面
+- 每个会话独立控制，不影响其他窗口
+- 实时显示当前翻译状态
+- 自动处理会话标识
+
+**其他可用斜杠命令**：
+- `/translate-toggle` - 切换翻译状态（开/关）
+
+**注意**：此功能需要 Claude Code 识别 `translate-toggle` 技能。技能定义文件位于 `~/.claude/skills/translate-toggle/SKILL.md`。
+
 ### 手动测试 Hook
 
 ```bash

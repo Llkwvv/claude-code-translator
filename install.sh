@@ -189,6 +189,12 @@ cp "$SCRIPT_DIR/hooks/after-model-response.sh" "$STOP_HOOK_FILE"
 chmod +x "$STOP_HOOK_FILE"
 log_success "输出 Hook 已安装"
 
+# 安装 translate-toggle 技能
+log_info "安装 translate-toggle 技能..."
+mkdir -p "$CLAUDE_DIR/skills/translate-toggle"
+cp "$SCRIPT_DIR/skills/translate-toggle/SKILL.md" "$CLAUDE_DIR/skills/translate-toggle/SKILL.md" 2>/dev/null || true
+log_success "translate-toggle 技能已安装"
+
 # 显示配置说明
 echo ""
 echo "╔═══════════════════════════════════════════════════════════╗"
@@ -223,6 +229,9 @@ echo "会话级控制（临时禁用/启用翻译）:"
 echo "  claude-translate-off    # 禁用当前会话的翻译"
 echo "  claude-translate-on     # 启用当前会话的翻译"
 echo "  claude-translate-toggle # 切换当前会话的翻译状态"
+echo ""
+echo "Claude Code 内一键切换（斜杠命令）:"
+echo "  /translate-toggle        # Claude Code 会话中切换翻译状态"
 echo ""
 log_success "安装完成！"
 echo ""

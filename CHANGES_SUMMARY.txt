@@ -1,0 +1,92 @@
+# Summary of Changes: One-Click Translation Toggle Feature
+
+## What Was Implemented
+
+Added a `/translate-toggle` slash command that allows users to toggle translation hooks on/off directly within Claude Code, providing one-click control without needing to switch to terminal.
+
+## Key Features
+
+1. **Slash Command**: `/translate-toggle` - Toggle translation in Claude Code
+2. **CLI Tool**: `translate-toggle` - Terminal version of the toggle
+3. **Session-Specific Control**: Each Claude window maintains independent state
+4. **Visual Feedback**: ✅/🚫 emojis show current state
+5. **Backward Compatible**: Works with existing tools and configurations
+
+## Files Modified
+
+### Project Files
+- `README.md` - Added documentation section
+- `install.sh` - Added translate-toggle skill installation
+- `uninstall.sh` - Added translate-toggle skill cleanup
+- `hooks/before-user-message.sh` - Added session-specific file support
+- `hooks/after-model-response.sh` - Added session-specific file support
+
+### New Files Created
+- `skills/translate-toggle/SKILL.md` - Slash command definition
+
+### Installed Files (in user's system)
+- `/home/lkw/.local/bin/translate-toggle` - CLI toggle script
+- `/home/lkw/.claude/skills/translate-toggle/SKILL.md` - Skill definition
+
+## How It Works
+
+1. User types `/translate-toggle` in Claude Code
+2. The translate-toggle script toggles the session marker file
+3. Hook scripts check this marker before running
+4. If "off", hooks exit silently without translation
+5. If "on", hooks perform translation as normal
+
+## Technical Details
+
+### Priority Order
+1. Session-specific marker (`~/.claude/translate-session-<ID>`) - HIGHEST
+2. Global marker (`~/.claude/translate-session-mode`)
+3. Environment variable (`TRANSLATE_ENABLED`) - LOWEST
+
+### State Files
+- Active state: `~/.claude/translate-session-<CLAUDE_SESSION_ID>`
+- Global state: `~/.claude/translate-session-mode`
+
+### Hook Behavior
+- **"off" state**: Hooks exit 0 with no output (no translation)
+- **"on" state**: Hooks perform translation normally
+- **No marker**: Falls back to TRANSLATE_ENABLED env var
+
+## Usage Examples
+
+### In Claude Code
+```
+/translate-toggle
+✅ Translator enabled for this session
+   Current mode: on
+
+/translate-toggle
+🚫 Translator disabled for this session
+   Current mode: off
+```
+
+### In Terminal
+```bash
+translate-toggle        # Toggle state
+claude-translate-on     # Enable
+claude-translate-off    # Disable
+```
+
+## Testing
+
+All functionality tested and verified:
+- ✅ Toggle switches between states
+- ✅ Hook respects "off" (no translation)
+- ✅ Hook respects "on" (performs translation)
+- ✅ Session-specific control
+- ✅ Visual feedback correct
+- ✅ Backward compatibility maintained
+
+## Benefits
+
+1. **Convenience**: One-click toggle in Claude Code
+2. **Speed**: No terminal switching needed
+3. **Clarity**: Immediate visual feedback
+4. **Flexibility**: Per-session control
+5. **Compatibility**: Works with existing tools
+6. **Discoverability**: Available as slash command

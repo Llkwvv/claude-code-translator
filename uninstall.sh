@@ -53,6 +53,11 @@ rm -f "$HOOKS_DIR/before-user-message.sh" 2>/dev/null || true
 rm -f "$HOOKS_DIR/after-model-response.sh" 2>/dev/null || true
 log_success "Hook 已删除"
 
+# 删除 translate-toggle 技能
+log_info "删除 translate-toggle 技能..."
+rm -rf "$CLAUDE_DIR/skills/translate-toggle" 2>/dev/null || true
+log_success "translate-toggle 技能已删除"
+
 # 清理 settings.json（translator 配置）和 settings.local.json（hook 配置）
 log_info "清理 settings..."
 
